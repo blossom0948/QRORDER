@@ -19,4 +19,4 @@ node -e "require('http').createServer((req,res)=>require('fs').createReadStream(
 
 ## 배포
 
-`main` 브랜치에 푸시하면 GitHub Actions가 정적 파일을 GitHub Pages로 배포합니다.
+GitHub Pages는 `main` 브랜치의 루트 경로(`/`)를 배포 소스로 사용합니다.
