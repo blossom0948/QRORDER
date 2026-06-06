@@ -3,243 +3,62 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>스마트 QR 테이블 오더</title>
+    <title>테이블 주문</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="#customer" aria-label="스마트 QR 테이블 오더 홈">
-        <span class="brand-mark">QR</span>
-        <span>
-          <strong>테이블링크</strong>
-          <small>Smart QR Table Order</small>
-        </span>
-      </a>
-      <nav class="nav" aria-label="주요 화면">
-        <a href="#customer">손님 주문</a>
-        <a href="#admin">사장님 보드</a>
-        <a href="#qr">QR 생성</a>
-        <a href="#strategy">전략</a>
-      </nav>
+  <body data-page="customer">
+    <header class="customer-header">
+      <div>
+        <strong id="storeName">매장</strong>
+        <span id="tableName">테이블 확인 중</span>
+      </div>
+      <button id="openCart" class="cart-chip" type="button">장바구니 <span id="cartCount">0</span></button>
     </header>
 
-    <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <img src="assets/hero-qr-order.png" alt="식당 테이블에서 QR 주문 메뉴를 사용하는 장면" />
-        <div class="hero-copy">
-          <p class="eyebrow">앱 설치 없는 후불제 매장용 주문 MVP</p>
-          <h1 id="hero-title">테이블 QR 하나로 주문 접수와 주방 알림까지</h1>
-          <p>
-            손님은 웹 메뉴판에서 바로 주문하고, 사장님은 스마트폰이나 포스 화면에서 실시간으로 접수합니다.
-            결제 연동 없이도 피크타임 호출과 추가 주문 대응을 줄이는 데 집중했습니다.
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="#customer">주문 화면 체험</a>
-            <a class="button ghost" href="#admin">관리 보드 보기</a>
-          </div>
+    <main class="customer-shell">
+      <section class="menu-area" aria-labelledby="menuTitle">
+        <div class="customer-title">
+          <p>QR 주문</p>
+          <h1 id="menuTitle">메뉴</h1>
         </div>
+
+        <div class="category-tabs" role="tablist" aria-label="메뉴 카테고리">
+          <button class="active" type="button" data-category="all">전체</button>
+          <button type="button" data-category="main">메인</button>
+          <button type="button" data-category="side">사이드</button>
+          <button type="button" data-category="drink">음료</button>
+        </div>
+
+        <div id="menuList" class="customer-menu-list" aria-live="polite"></div>
       </section>
 
-      <section id="customer" class="workbench section-pad" aria-labelledby="customer-title">
-        <div class="section-heading">
-          <p class="eyebrow">Customer Web Front-end</p>
-          <h2 id="customer-title">손님용 QR 웹 메뉴판</h2>
-          <p>URL 파라미터의 매장과 테이블을 인식하고, 메뉴 선택부터 주문 전송까지 한 화면에서 처리합니다.</p>
-        </div>
-
-        <div class="customer-grid">
-          <article class="phone-shell" aria-label="손님 주문 화면 미리보기">
-            <div class="phone-top">
-              <span class="status-dot"></span>
-              <span id="tableLabel">고깃집 온기 · 5번 테이블</span>
-            </div>
-
-            <div class="menu-hero">
-              <div>
-                <strong>오늘의 추천</strong>
-                <p>숙성 삼겹살과 사이드 메뉴를 한 번에 담아보세요.</p>
-              </div>
-              <span>후불 주문</span>
-            </div>
-
-            <div class="category-tabs" role="tablist" aria-label="메뉴 카테고리">
-              <button class="active" type="button" data-category="all">전체</button>
-              <button type="button" data-category="main">메인</button>
-              <button type="button" data-category="side">사이드</button>
-              <button type="button" data-category="drink">음료</button>
-            </div>
-
-            <div id="menuList" class="menu-list" aria-live="polite"></div>
-          </article>
-
-          <aside class="cart-panel" aria-labelledby="cart-title">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">Cart</p>
-                <h3 id="cart-title">장바구니</h3>
-              </div>
-              <button id="clearCart" class="icon-button" type="button" aria-label="장바구니 비우기">×</button>
-            </div>
-            <div id="cartItems" class="cart-items empty">담긴 메뉴가 없습니다.</div>
-            <div class="total-row">
-              <span>총 주문 금액</span>
-              <strong id="cartTotal">0원</strong>
-            </div>
-            <button id="placeOrder" class="button primary full" type="button">주문 완료</button>
-            <p id="orderFeedback" class="feedback" role="status" aria-live="polite"></p>
-          </aside>
-        </div>
-      </section>
-
-      <section id="admin" class="section-pad admin-section" aria-labelledby="admin-title">
-        <div class="section-heading row-heading">
+      <aside id="cartPanel" class="cart-panel" aria-labelledby="cartTitle">
+        <div class="panel-head">
           <div>
-            <p class="eyebrow">Owner Dashboard</p>
-            <h2 id="admin-title">사장님 실시간 주문 보드</h2>
-            <p>새 주문은 대기열에 들어오고, 클릭 한 번으로 조리중과 완료 상태로 넘길 수 있습니다.</p>
+            <p>주문 확인</p>
+            <h2 id="cartTitle">장바구니</h2>
           </div>
-          <div class="admin-actions">
-            <button id="seedOrder" class="button secondary" type="button">테스트 주문 추가</button>
-            <button id="toggleSound" class="button ghost" type="button" aria-pressed="false">알림 켜기</button>
-          </div>
+          <button id="clearCart" class="icon-button" type="button" aria-label="장바구니 비우기">×</button>
         </div>
 
-        <div class="metric-strip" aria-label="주문 현황">
-          <div>
-            <span id="pendingCount">0</span>
-            <small>대기</small>
-          </div>
-          <div>
-            <span id="cookingCount">0</span>
-            <small>조리중</small>
-          </div>
-          <div>
-            <span id="servedCount">0</span>
-            <small>완료</small>
-          </div>
-          <div>
-            <span id="todaySales">0원</span>
-            <small>오늘 주문액</small>
-          </div>
+        <div id="cartItems" class="cart-items empty">담긴 메뉴가 없습니다.</div>
+        <div class="total-row">
+          <span>합계</span>
+          <strong id="cartTotal">0원</strong>
         </div>
+        <button id="placeOrder" class="button primary full" type="button">주문하기</button>
+      </aside>
 
-        <div id="orderBoard" class="kanban" aria-live="polite"></div>
-
-        <div class="cms-layout">
-          <div class="section-heading compact">
-            <p class="eyebrow">Menu CMS</p>
-            <h3>메뉴 및 품절 관리</h3>
-            <p>가격과 품절 상태는 손님 메뉴판에 즉시 반영됩니다.</p>
-          </div>
-          <div id="cmsList" class="cms-list"></div>
+      <section id="orderComplete" class="order-complete" hidden aria-live="polite">
+        <div>
+          <p>주문 접수 완료</p>
+          <h2 id="completeTitle">주문이 전송되었습니다.</h2>
+          <p id="completeMessage"></p>
         </div>
-      </section>
-
-      <section id="qr" class="section-pad qr-section" aria-labelledby="qr-title">
-        <div class="section-heading">
-          <p class="eyebrow">Table QR Generator</p>
-          <h2 id="qr-title">매장 QR 코드 생성기</h2>
-          <p>매장 ID와 테이블 번호만 입력하면 손님 메뉴판으로 연결되는 QR 이미지를 만들 수 있습니다.</p>
-        </div>
-
-        <div class="qr-grid">
-          <form id="qrForm" class="qr-form">
-            <label>
-              매장 ID
-              <input id="storeInput" name="store" value="store_onki_01" autocomplete="off" />
-            </label>
-            <label>
-              테이블 번호
-              <input id="tableInput" name="table" value="05" autocomplete="off" />
-            </label>
-            <label>
-              메뉴판 도메인
-              <input id="domainInput" name="domain" value="https://tablelink.example/menu" autocomplete="off" />
-            </label>
-            <button class="button primary" type="submit">QR 다시 생성</button>
-          </form>
-
-          <div class="qr-preview">
-            <canvas id="qrCanvas" width="256" height="256" aria-label="생성된 QR 코드"></canvas>
-            <p id="qrUrl"></p>
-            <div class="inline-actions">
-              <button id="copyUrl" class="button secondary" type="button">URL 복사</button>
-              <button id="downloadQr" class="button ghost" type="button">PNG 다운로드</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="strategy" class="section-pad strategy" aria-labelledby="strategy-title">
-        <div class="section-heading">
-          <p class="eyebrow">Research Summary</p>
-          <h2 id="strategy-title">문서 기반 실행 전략</h2>
-          <p>리서치 보고서의 벤치마킹 포인트를 제품 화면과 영업 메시지로 압축했습니다.</p>
-        </div>
-
-        <div class="insight-grid">
-          <article>
-            <h3>웹 접근성</h3>
-            <p>네이버 주문처럼 앱 설치 없이 기본 카메라 스캔만으로 메뉴판에 진입합니다.</p>
-          </article>
-          <article>
-            <h3>간단한 관리자 화면</h3>
-            <p>토스 오더와 핀메뉴의 강점처럼 사장님은 브라우저만 켜두고 주문을 받습니다.</p>
-          </article>
-          <article>
-            <h3>하드웨어 비용 0원</h3>
-            <p>거치형 태블릿 대신 종이 QR과 개인 스마트폰을 활용해 초기 장벽을 낮춥니다.</p>
-          </article>
-        </div>
-
-        <div class="stack-table" role="table" aria-label="추천 기술 스택">
-          <div role="row">
-            <strong role="cell">Front-end</strong>
-            <span role="cell">React 또는 Vue + Tailwind CSS</span>
-          </div>
-          <div role="row">
-            <strong role="cell">Database</strong>
-            <span role="cell">Firebase Firestore onSnapshot 실시간 동기화</span>
-          </div>
-          <div role="row">
-            <strong role="cell">Backend</strong>
-            <span role="cell">Firebase Functions 기반 서버리스 로직</span>
-          </div>
-          <div role="row">
-            <strong role="cell">Hosting</strong>
-            <span role="cell">Firebase Hosting, Vercel, Cloudflare Pages</span>
-          </div>
-        </div>
+        <button id="newOrder" class="button secondary" type="button">추가 주문하기</button>
       </section>
     </main>
 
-    <dialog id="itemDialog" class="item-dialog">
-      <form method="dialog">
-        <div class="dialog-head">
-          <div>
-            <p class="eyebrow">Options</p>
-            <h3 id="dialogTitle">메뉴 선택</h3>
-          </div>
-          <button class="icon-button" value="cancel" aria-label="닫기">×</button>
-        </div>
-        <p id="dialogDesc" class="dialog-desc"></p>
-        <div class="option-group">
-          <span>수량</span>
-          <div class="stepper">
-            <button id="minusQty" type="button" aria-label="수량 줄이기">−</button>
-            <strong id="qtyValue">1</strong>
-            <button id="plusQty" type="button" aria-label="수량 늘리기">+</button>
-          </div>
-        </div>
-        <div class="option-group">
-          <span>옵션</span>
-          <div id="optionChoices" class="option-choices"></div>
-        </div>
-        <button id="confirmAdd" class="button primary full" value="default">담기</button>
-      </form>
-    </dialog>
-
-    <script src="assets/vendor/qrcode.min.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

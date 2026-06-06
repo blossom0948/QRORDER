@@ -1,120 +1,105 @@
-const money = new Intl.NumberFormat("ko-KR", {
+const MENU_KEY = "qrorder.menu.v3";
+const ORDER_KEY = "qrorder.orders.v3";
+
+const formatter = new Intl.NumberFormat("ko-KR", {
   style: "currency",
   currency: "KRW",
   maximumFractionDigits: 0,
 });
 
-const categories = {
+const categoryLabels = {
   all: "전체",
   main: "메인",
   side: "사이드",
   drink: "음료",
 };
 
-const menu = [
+const defaultMenu = [
   {
     id: "pork-set",
     category: "main",
     name: "숙성 삼겹살 한판",
+    desc: "초벌 숙성 삼겹살, 쌈 채소, 기본 찬",
     price: 17000,
-    desc: "초벌 숙성 삼겹살, 쌈 채소, 기본 찬 구성",
-    optionLabel: "고기 굽기 요청",
-    options: ["기본", "바싹", "덜 익힘"],
+    image: "",
     soldOut: false,
-    imagePos: "58% 48%",
   },
   {
     id: "stew",
     category: "side",
     name: "차돌 된장찌개",
+    desc: "고기 주문과 함께 많이 찾는 국물 메뉴",
     price: 8000,
-    desc: "테이블 추가 주문이 잦은 국물 사이드",
-    optionLabel: "맵기",
-    options: ["보통", "얼큰", "순한맛"],
+    image: "",
     soldOut: false,
-    imagePos: "80% 72%",
   },
   {
     id: "egg",
     category: "side",
     name: "치즈 계란찜",
+    desc: "부드러운 계란찜에 치즈를 올린 사이드",
     price: 6500,
-    desc: "아이 동반 테이블에서 많이 찾는 부드러운 사이드",
-    optionLabel: "치즈",
-    options: ["기본", "치즈 추가 +1,000원"],
+    image: "",
     soldOut: true,
-    imagePos: "70% 58%",
   },
   {
     id: "soju",
     category: "drink",
     name: "소주",
+    desc: "추가 주문이 잦은 기본 주류",
     price: 5000,
-    desc: "직원 호출 없이 바로 추가 주문",
-    optionLabel: "종류",
-    options: ["참이슬", "처음처럼", "진로"],
+    image: "",
     soldOut: false,
-    imagePos: "86% 28%",
   },
   {
     id: "cola",
     category: "drink",
     name: "콜라",
+    desc: "탄산음료",
     price: 2500,
-    desc: "음료 추가 주문을 빠르게 접수",
-    optionLabel: "얼음",
-    options: ["얼음 있음", "얼음 없음"],
+    image: "",
     soldOut: false,
-    imagePos: "88% 42%",
   },
 ];
 
 const state = {
-  activeCategory: "all",
+  menu: loadMenu(),
+  orders: loadOrders(),
   cart: [],
-  orders: [],
-  selectedItemId: null,
-  selectedQty: 1,
-  selectedOption: "",
+  activeCategory: "all",
   soundEnabled: false,
 };
 
-const els = {
-  tableLabel: document.querySelector("#tableLabel"),
-  menuList: document.querySelector("#menuList"),
-  cartItems: document.querySelector("#cartItems"),
-  cartTotal: document.querySelector("#cartTotal"),
-  clearCart: document.querySelector("#clearCart"),
-  placeOrder: document.querySelector("#placeOrder"),
-  orderFeedback: document.querySelector("#orderFeedback"),
-  itemDialog: document.querySelector("#itemDialog"),
-  dialogTitle: document.querySelector("#dialogTitle"),
-  dialogDesc: document.querySelector("#dialogDesc"),
-  qtyValue: document.querySelector("#qtyValue"),
-  minusQty: document.querySelector("#minusQty"),
-  plusQty: document.querySelector("#plusQty"),
-  optionChoices: document.querySelector("#optionChoices"),
-  confirmAdd: document.querySelector("#confirmAdd"),
-  orderBoard: document.querySelector("#orderBoard"),
-  pendingCount: document.querySelector("#pendingCount"),
-  cookingCount: document.querySelector("#cookingCount"),
-  servedCount: document.querySelector("#servedCount"),
-  todaySales: document.querySelector("#todaySales"),
-  seedOrder: document.querySelector("#seedOrder"),
-  toggleSound: document.querySelector("#toggleSound"),
-  cmsList: document.querySelector("#cmsList"),
-  qrForm: document.querySelector("#qrForm"),
-  storeInput: document.querySelector("#storeInput"),
-  tableInput: document.querySelector("#tableInput"),
-  domainInput: document.querySelector("#domainInput"),
-  qrCanvas: document.querySelector("#qrCanvas"),
-  qrUrl: document.querySelector("#qrUrl"),
-  copyUrl: document.querySelector("#copyUrl"),
-  downloadQr: document.querySelector("#downloadQr"),
-};
-
 function formatMoney(value) {
-  return money.format(value);
+  return formatter.format(value);
+}
+
+function loadMenu() {
+  const saved = readJson(MENU_KEY);
+  return Array.isArray(saved) && saved.length ? saved : structuredClone(defaultMenu);
+}
+
+function saveMenu() {
+  localStorage.setItem(MENU_KEY, JSON.stringify(state.menu));
+}
+
+function loadOrders() {
+  const saved = readJson(ORDER_KEY);
+  return Array.isArray(saved)
+    ? saved.map((order) => ({ ...order, createdAt: new Date(order.createdAt) }))
+    : [];
+}
+
+function saveOrders() {
+  localStorage.setItem(ORDER_KEY, JSON.stringify(state.orders));
+}
+
+function readJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
 }
 
 function getTableInfo() {
@@ -125,62 +110,168 @@ function getTableInfo() {
   };
 }
 
-function initTableLabel() {
+function makeId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return `order-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function pageType() {
+  return document.body.dataset.page;
+}
+
+function initCustomer() {
   const { store, table } = getTableInfo();
-  els.tableLabel.textContent = `${store} · ${Number(table) || table}번 테이블`;
-  els.storeInput.value = paramsSafeStore(store);
-  els.tableInput.value = String(table).padStart(2, "0");
+  document.querySelector("#storeName").textContent = store;
+  document.querySelector("#tableName").textContent = `${Number(table) || table}번 테이블`;
+
+  bindCustomerEvents();
+  window.addEventListener("storage", (event) => {
+    if (event.key !== MENU_KEY) return;
+    state.menu = loadMenu();
+    renderCustomerMenu();
+  });
+  watchMenuChanges();
+  renderCustomerMenu();
+  renderCart();
 }
 
-function paramsSafeStore(store) {
-  return store
-    .trim()
-    .replace(/\s+/g, "_")
-    .replace(/[^\w가-힣-]/g, "")
-    .toLowerCase();
+function watchMenuChanges() {
+  let lastMenuSnapshot = JSON.stringify(state.menu);
+  window.setInterval(() => {
+    const nextMenu = loadMenu();
+    const nextSnapshot = JSON.stringify(nextMenu);
+    if (nextSnapshot === lastMenuSnapshot) return;
+    state.menu = nextMenu;
+    lastMenuSnapshot = nextSnapshot;
+    renderCustomerMenu();
+  }, 1200);
 }
 
-function renderMenu() {
-  const filtered = menu.filter((item) => state.activeCategory === "all" || item.category === state.activeCategory);
+function bindCustomerEvents() {
+  document.querySelectorAll("[data-category]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.activeCategory = button.dataset.category;
+      document.querySelectorAll("[data-category]").forEach((tab) => {
+        tab.classList.toggle("active", tab === button);
+      });
+      renderCustomerMenu();
+    });
+  });
 
-  els.menuList.innerHTML = filtered
-    .map(
-      (item) => `
-        <article class="menu-card ${item.soldOut ? "sold-out" : ""}">
-          <div class="menu-image" style="background-position:${item.imagePos}" aria-hidden="true"></div>
-          <div class="menu-info">
-            <h3>${item.name}${item.soldOut ? '<span class="sold-badge">품절</span>' : ""}</h3>
-            <p>${item.desc}</p>
-            <span class="price">${formatMoney(item.price)}</span>
+  document.querySelector("#menuList").addEventListener("click", (event) => {
+    const addButton = event.target.closest("[data-add]");
+    if (addButton) addToCart(addButton.dataset.add);
+  });
+
+  document.querySelector("#cartItems").addEventListener("click", (event) => {
+    const plus = event.target.closest("[data-plus]");
+    const minus = event.target.closest("[data-minus]");
+    const remove = event.target.closest("[data-remove]");
+
+    if (plus) changeCartQty(plus.dataset.plus, 1);
+    if (minus) changeCartQty(minus.dataset.minus, -1);
+    if (remove) removeCartItem(remove.dataset.remove);
+  });
+
+  document.querySelector("#clearCart").addEventListener("click", () => {
+    state.cart = [];
+    renderCart();
+  });
+
+  document.querySelector("#openCart").addEventListener("click", () => {
+    document.querySelector("#cartPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  document.querySelector("#placeOrder").addEventListener("click", placeOrder);
+  document.querySelector("#newOrder").addEventListener("click", () => {
+    document.querySelector("#orderComplete").hidden = true;
+    document.querySelector(".menu-area").hidden = false;
+    document.querySelector("#cartPanel").hidden = false;
+  });
+}
+
+function renderCustomerMenu() {
+  const list = document.querySelector("#menuList");
+  const filtered = state.menu.filter((item) => {
+    return state.activeCategory === "all" || item.category === state.activeCategory;
+  });
+
+  list.innerHTML = filtered
+    .map((item) => {
+      const thumb = item.image
+        ? `<img class="menu-thumb" src="${escapeAttr(item.image)}" alt="${escapeAttr(item.name)} 이미지" loading="lazy" />`
+        : "";
+      return `
+        <article class="customer-menu-card ${item.image ? "has-image" : ""} ${item.soldOut ? "sold-out" : ""}">
+          ${thumb}
+          <div class="menu-copy">
+            <div>
+              <h2>${escapeHtml(item.name)}${item.soldOut ? '<span class="sold-badge">품절</span>' : ""}</h2>
+              <p>${escapeHtml(item.desc)}</p>
+            </div>
+            <strong>${formatMoney(item.price)}</strong>
           </div>
-          <button class="add-button" type="button" data-add="${item.id}" ${item.soldOut ? "disabled" : ""} aria-label="${item.name} 담기">+</button>
+          <button class="add-button" type="button" data-add="${item.id}" ${item.soldOut ? "disabled" : ""}>
+            담기
+          </button>
         </article>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 
+function addToCart(menuId) {
+  const item = state.menu.find((entry) => entry.id === menuId);
+  if (!item || item.soldOut) return;
+
+  const existing = state.cart.find((entry) => entry.id === menuId);
+  if (existing) existing.qty += 1;
+  else state.cart.push({ id: item.id, name: item.name, price: item.price, qty: 1 });
+  renderCart();
+}
+
+function changeCartQty(menuId, amount) {
+  const item = state.cart.find((entry) => entry.id === menuId);
+  if (!item) return;
+  item.qty += amount;
+  if (item.qty <= 0) removeCartItem(menuId);
+  else renderCart();
+}
+
+function removeCartItem(menuId) {
+  state.cart = state.cart.filter((entry) => entry.id !== menuId);
+  renderCart();
+}
+
 function renderCart() {
-  const total = state.cart.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
-  els.cartTotal.textContent = formatMoney(total);
-  els.placeOrder.disabled = state.cart.length === 0;
+  const cartItems = document.querySelector("#cartItems");
+  const cartCount = document.querySelector("#cartCount");
+  const total = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  document.querySelector("#cartTotal").textContent = formatMoney(total);
+  document.querySelector("#placeOrder").disabled = state.cart.length === 0;
+  cartCount.textContent = String(state.cart.reduce((sum, item) => sum + item.qty, 0));
 
   if (state.cart.length === 0) {
-    els.cartItems.className = "cart-items empty";
-    els.cartItems.textContent = "담긴 메뉴가 없습니다.";
+    cartItems.className = "cart-items empty";
+    cartItems.textContent = "담긴 메뉴가 없습니다.";
     return;
   }
 
-  els.cartItems.className = "cart-items";
-  els.cartItems.innerHTML = state.cart
+  cartItems.className = "cart-items";
+  cartItems.innerHTML = state.cart
     .map(
-      (item, index) => `
+      (item) => `
         <div class="cart-item">
-          <strong><span>${item.name}</span><span>${formatMoney(item.unitPrice * item.qty)}</span></strong>
-          <small>${item.option} · ${item.qty}개</small>
-          <div class="cart-line-actions">
-            <span>${formatMoney(item.unitPrice)} / 개</span>
-            <button type="button" data-remove="${index}" aria-label="${item.name} 삭제">×</button>
+          <div>
+            <strong>${escapeHtml(item.name)}</strong>
+            <span>${formatMoney(item.price * item.qty)}</span>
+          </div>
+          <div class="cart-control">
+            <button type="button" data-minus="${item.id}" aria-label="${escapeAttr(item.name)} 수량 줄이기">−</button>
+            <span>${item.qty}</span>
+            <button type="button" data-plus="${item.id}" aria-label="${escapeAttr(item.name)} 수량 늘리기">+</button>
+            <button type="button" data-remove="${item.id}" aria-label="${escapeAttr(item.name)} 삭제">삭제</button>
           </div>
         </div>
       `,
@@ -188,104 +279,108 @@ function renderCart() {
     .join("");
 }
 
-function openItemDialog(itemId) {
-  const item = menu.find((entry) => entry.id === itemId);
-  if (!item || item.soldOut) return;
-
-  state.selectedItemId = item.id;
-  state.selectedQty = 1;
-  state.selectedOption = item.options[0];
-
-  els.dialogTitle.textContent = item.name;
-  els.dialogDesc.textContent = `${item.desc} · ${item.optionLabel} 선택`;
-  els.qtyValue.textContent = state.selectedQty;
-  renderOptions(item);
-  els.itemDialog.showModal();
-}
-
-function renderOptions(item) {
-  els.optionChoices.innerHTML = item.options
-    .map(
-      (option) => `
-        <button type="button" class="${option === state.selectedOption ? "active" : ""}" data-option="${option}">
-          ${option}
-        </button>
-      `,
-    )
-    .join("");
-}
-
-function addSelectedItem() {
-  const item = menu.find((entry) => entry.id === state.selectedItemId);
-  if (!item) return;
-
-  const optionPrice = state.selectedOption.includes("+1,000") ? 1000 : 0;
-  state.cart.push({
-    id: item.id,
-    name: item.name,
-    option: state.selectedOption,
-    qty: state.selectedQty,
-    unitPrice: item.price + optionPrice,
-  });
-
-  els.orderFeedback.textContent = "";
-  renderCart();
-}
-
-function placeOrder(source = "customer") {
+function placeOrder() {
   if (state.cart.length === 0) return;
 
-  const { table } = getTableInfo();
+  const { store, table } = getTableInfo();
+  const total = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const order = {
-    id: crypto.randomUUID(),
+    id: makeId(),
+    store,
     table,
-    source,
     items: state.cart.map((item) => ({ ...item })),
-    total: state.cart.reduce((sum, item) => sum + item.unitPrice * item.qty, 0),
+    total,
     status: "pending",
     createdAt: new Date(),
   };
 
   state.orders.unshift(order);
+  saveOrders();
   state.cart = [];
-  els.orderFeedback.textContent = `${Number(table) || table}번 테이블 주문이 사장님 보드로 전송되었습니다.`;
   renderCart();
-  renderBoard();
-  playAlert();
+
+  document.querySelector(".menu-area").hidden = true;
+  document.querySelector("#cartPanel").hidden = true;
+  document.querySelector("#orderComplete").hidden = false;
+  document.querySelector("#completeTitle").textContent = `${Number(table) || table}번 테이블 주문 접수`;
+  document.querySelector("#completeMessage").textContent = `합계 ${formatMoney(total)} 주문이 접수되었습니다. 직원이 확인 후 준비합니다.`;
 }
 
-function seedTestOrder() {
-  const samples = [
-    { id: "pork-set", qty: 2, option: "바싹" },
-    { id: "soju", qty: 1, option: "참이슬" },
-    { id: "stew", qty: 1, option: "얼큰" },
-  ];
+function initAdmin() {
+  bindAdminEvents();
+  renderAdmin();
+  window.setInterval(refreshOrders, 1200);
+}
 
-  state.cart = samples.map((sample) => {
-    const item = menu.find((entry) => entry.id === sample.id);
-    return {
-      id: item.id,
-      name: item.name,
-      option: sample.option,
-      qty: sample.qty,
-      unitPrice: item.price,
-    };
+function bindAdminEvents() {
+  document.querySelector("#orderBoard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-status]");
+    if (!button) return;
+    moveOrder(button.dataset.status);
   });
-  placeOrder("admin-test");
+
+  document.querySelector("#menuManager").addEventListener("input", (event) => {
+    const input = event.target.closest("[data-field]");
+    if (!input) return;
+    updateMenuField(input.dataset.id, input.dataset.field, input.value, false);
+  });
+
+  document.querySelector("#menuManager").addEventListener("change", (event) => {
+    const checkbox = event.target.closest("[data-sold]");
+    const input = event.target.closest("[data-field]");
+    if (checkbox) updateMenuField(checkbox.dataset.sold, "soldOut", checkbox.checked);
+    if (input) updateMenuField(input.dataset.id, input.dataset.field, input.value);
+  });
+
+  document.querySelector("#seedOrder").addEventListener("click", seedOrder);
+  document.querySelector("#toggleSound").addEventListener("click", () => {
+    state.soundEnabled = !state.soundEnabled;
+    const button = document.querySelector("#toggleSound");
+    button.textContent = state.soundEnabled ? "알림 끄기" : "알림 켜기";
+    button.setAttribute("aria-pressed", String(state.soundEnabled));
+    if (state.soundEnabled) playAlert();
+  });
 }
 
-function renderBoard() {
+function refreshOrders() {
+  const previousPending = state.orders.filter((order) => order.status === "pending").length;
+  state.orders = loadOrders();
+  const nextPending = state.orders.filter((order) => order.status === "pending").length;
+  if (state.soundEnabled && nextPending > previousPending) playAlert();
+  renderAdmin();
+}
+
+function renderAdmin() {
+  renderMetrics();
+  renderOrderBoard();
+  renderMenuManager();
+}
+
+function renderMetrics() {
+  document.querySelector("#pendingCount").textContent = countOrders("pending");
+  document.querySelector("#cookingCount").textContent = countOrders("cooking");
+  document.querySelector("#servedCount").textContent = countOrders("served");
+  document.querySelector("#todaySales").textContent = formatMoney(
+    state.orders.reduce((sum, order) => sum + order.total, 0),
+  );
+}
+
+function countOrders(status) {
+  return String(state.orders.filter((order) => order.status === status).length);
+}
+
+function renderOrderBoard() {
   const columns = [
     { id: "pending", title: "대기", action: "조리 시작" },
     { id: "cooking", title: "조리중", action: "완료 처리" },
-    { id: "served", title: "완료", action: "보드에서 정리" },
+    { id: "served", title: "완료", action: "정리" },
   ];
 
-  els.orderBoard.innerHTML = columns
+  document.querySelector("#orderBoard").innerHTML = columns
     .map((column) => {
       const orders = state.orders.filter((order) => order.status === column.id);
       return `
-        <section class="kanban-column" aria-label="${column.title} 주문">
+        <section class="kanban-column">
           <h3>${column.title}<span>${orders.length}</span></h3>
           ${
             orders.length
@@ -296,31 +391,28 @@ function renderBoard() {
       `;
     })
     .join("");
-
-  els.pendingCount.textContent = String(state.orders.filter((order) => order.status === "pending").length);
-  els.cookingCount.textContent = String(state.orders.filter((order) => order.status === "cooking").length);
-  els.servedCount.textContent = String(state.orders.filter((order) => order.status === "served").length);
-  els.todaySales.textContent = formatMoney(state.orders.reduce((sum, order) => sum + order.total, 0));
 }
 
 function renderOrderCard(order, column) {
-  const itemLines = order.items.map((item) => `<li>${item.name} ${item.qty}개 · ${item.option}</li>`).join("");
-  const minutes = Math.max(0, Math.round((Date.now() - order.createdAt.getTime()) / 60000));
+  const itemList = order.items
+    .map((item) => `<li>${escapeHtml(item.name)} ${item.qty}개</li>`)
+    .join("");
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(order.createdAt).getTime()) / 60000));
 
   return `
     <article class="order-card ${order.status}">
-      <strong>
-        <span>${Number(order.table) || order.table}번 테이블</span>
+      <div class="order-card-head">
+        <strong>${Number(order.table) || order.table}번 테이블</strong>
         <span>${formatMoney(order.total)}</span>
-      </strong>
-      <ul>${itemLines}</ul>
+      </div>
+      <ul>${itemList}</ul>
       <small>${minutes === 0 ? "방금 접수" : `${minutes}분 전 접수`}</small>
-      <button type="button" data-next-status="${order.id}">${column.action}</button>
+      <button type="button" data-status="${order.id}">${column.action}</button>
     </article>
   `;
 }
 
-function nextOrderStatus(orderId) {
+function moveOrder(orderId) {
   const order = state.orders.find((entry) => entry.id === orderId);
   if (!order) return;
 
@@ -328,67 +420,72 @@ function nextOrderStatus(orderId) {
   else if (order.status === "cooking") order.status = "served";
   else state.orders = state.orders.filter((entry) => entry.id !== orderId);
 
-  renderBoard();
+  saveOrders();
+  renderAdmin();
 }
 
-function renderCms() {
-  els.cmsList.innerHTML = menu
-    .map(
-      (item) => `
-        <div class="cms-row">
-          <div>
-            <strong>${item.name}</strong>
-            <small>${categories[item.category]}</small>
+function renderMenuManager() {
+  document.querySelector("#menuManager").innerHTML = state.menu
+    .map((item) => {
+      const preview = item.image
+        ? `<img src="${escapeAttr(item.image)}" alt="${escapeAttr(item.name)} 이미지 미리보기" />`
+        : `<span class="image-placeholder">이미지 없음</span>`;
+      return `
+        <article class="menu-manage-row">
+          <div class="image-preview">${preview}</div>
+          <div class="manage-copy">
+            <strong>${escapeHtml(item.name)}</strong>
+            <small>${categoryLabels[item.category]}</small>
           </div>
-          <input type="number" min="0" step="500" value="${item.price}" data-price="${item.id}" aria-label="${item.name} 가격" />
-          <button class="toggle ${item.soldOut ? "is-off" : ""}" type="button" data-sold="${item.id}">
-            ${item.soldOut ? "품절" : "판매중"}
-          </button>
-        </div>
-      `,
-    )
+          <label>
+            이미지 URL
+            <input data-id="${item.id}" data-field="image" value="${escapeAttr(item.image)}" placeholder="https://..." />
+          </label>
+          <label>
+            가격
+            <input data-id="${item.id}" data-field="price" type="number" min="0" step="500" value="${item.price}" />
+          </label>
+          <label class="sold-toggle">
+            <input data-sold="${item.id}" type="checkbox" ${item.soldOut ? "checked" : ""} />
+            품절
+          </label>
+        </article>
+      `;
+    })
     .join("");
 }
 
-async function generateQr() {
-  const store = els.storeInput.value.trim() || "store_onki_01";
-  const table = els.tableInput.value.trim() || "05";
-  const domain = els.domainInput.value.trim() || "https://tablelink.example/menu";
-  const url = `${domain}?store=${encodeURIComponent(store)}&table=${encodeURIComponent(table)}`;
-  els.qrUrl.textContent = url;
+function updateMenuField(id, field, value, shouldRender = true) {
+  const item = state.menu.find((entry) => entry.id === id);
+  if (!item) return;
+  item[field] = field === "price" ? Number(value) || 0 : value;
+  saveMenu();
+  if (shouldRender) renderMenuManager();
+}
 
-  if (!window.QRCode) {
-    els.qrUrl.textContent = `${url} · QR 라이브러리를 불러오지 못했습니다.`;
-    return;
-  }
+function seedOrder() {
+  const available = state.menu.filter((item) => !item.soldOut);
+  if (available.length === 0) return;
+  const selected = available.slice(0, 2).map((item, index) => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    qty: index + 1,
+  }));
+  const total = selected.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-  await QRCode.toCanvas(els.qrCanvas, url, {
-    width: 256,
-    margin: 2,
-    errorCorrectionLevel: "M",
-    color: {
-      dark: "#1b2522",
-      light: "#ffffff",
-    },
+  state.orders.unshift({
+    id: makeId(),
+    store: "고깃집 온기",
+    table: "05",
+    items: selected,
+    total,
+    status: "pending",
+    createdAt: new Date(),
   });
-}
-
-async function copyQrUrl() {
-  const text = els.qrUrl.textContent;
-  if (!text) return;
-  await navigator.clipboard.writeText(text);
-  els.copyUrl.textContent = "복사됨";
-  window.setTimeout(() => {
-    els.copyUrl.textContent = "URL 복사";
-  }, 1200);
-}
-
-function downloadQr() {
-  const link = document.createElement("a");
-  const table = els.tableInput.value.trim() || "05";
-  link.download = `table-${table}-qr.png`;
-  link.href = els.qrCanvas.toDataURL("image/png");
-  link.click();
+  saveOrders();
+  renderAdmin();
+  playAlert();
 }
 
 function playAlert() {
@@ -396,12 +493,12 @@ function playAlert() {
   const audio = new AudioContext();
   const now = audio.currentTime;
 
-  [0, 0.18, 0.36].forEach((offset) => {
+  [0, 0.16, 0.32].forEach((offset) => {
     const osc = audio.createOscillator();
     const gain = audio.createGain();
     osc.frequency.value = 880;
     gain.gain.setValueAtTime(0.0001, now + offset);
-    gain.gain.exponentialRampToValueAtTime(0.18, now + offset + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + offset + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.12);
     osc.connect(gain).connect(audio.destination);
     osc.start(now + offset);
@@ -409,107 +506,18 @@ function playAlert() {
   });
 }
 
-function bindEvents() {
-  document.querySelectorAll("[data-category]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.activeCategory = button.dataset.category;
-      document.querySelectorAll("[data-category]").forEach((tab) => tab.classList.toggle("active", tab === button));
-      renderMenu();
-    });
-  });
-
-  els.menuList.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-add]");
-    if (button) openItemDialog(button.dataset.add);
-  });
-
-  els.optionChoices.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-option]");
-    if (!button) return;
-    const item = menu.find((entry) => entry.id === state.selectedItemId);
-    state.selectedOption = button.dataset.option;
-    renderOptions(item);
-  });
-
-  els.minusQty.addEventListener("click", () => {
-    state.selectedQty = Math.max(1, state.selectedQty - 1);
-    els.qtyValue.textContent = state.selectedQty;
-  });
-
-  els.plusQty.addEventListener("click", () => {
-    state.selectedQty += 1;
-    els.qtyValue.textContent = state.selectedQty;
-  });
-
-  els.confirmAdd.addEventListener("click", (event) => {
-    event.preventDefault();
-    addSelectedItem();
-    els.itemDialog.close();
-  });
-
-  els.cartItems.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-remove]");
-    if (!button) return;
-    state.cart.splice(Number(button.dataset.remove), 1);
-    renderCart();
-  });
-
-  els.clearCart.addEventListener("click", () => {
-    state.cart = [];
-    els.orderFeedback.textContent = "";
-    renderCart();
-  });
-
-  els.placeOrder.addEventListener("click", () => placeOrder("customer"));
-  els.seedOrder.addEventListener("click", seedTestOrder);
-
-  els.toggleSound.addEventListener("click", () => {
-    state.soundEnabled = !state.soundEnabled;
-    els.toggleSound.textContent = state.soundEnabled ? "알림 끄기" : "알림 켜기";
-    els.toggleSound.setAttribute("aria-pressed", String(state.soundEnabled));
-    if (state.soundEnabled) playAlert();
-  });
-
-  els.orderBoard.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-next-status]");
-    if (button) nextOrderStatus(button.dataset.nextStatus);
-  });
-
-  els.cmsList.addEventListener("input", (event) => {
-    const input = event.target.closest("[data-price]");
-    if (!input) return;
-    const item = menu.find((entry) => entry.id === input.dataset.price);
-    item.price = Number(input.value) || 0;
-    renderMenu();
-    renderCart();
-  });
-
-  els.cmsList.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-sold]");
-    if (!button) return;
-    const item = menu.find((entry) => entry.id === button.dataset.sold);
-    item.soldOut = !item.soldOut;
-    renderMenu();
-    renderCms();
-  });
-
-  els.qrForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    generateQr();
-  });
-
-  els.copyUrl.addEventListener("click", copyQrUrl);
-  els.downloadQr.addEventListener("click", downloadQr);
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function init() {
-  initTableLabel();
-  bindEvents();
-  renderMenu();
-  renderCart();
-  renderBoard();
-  renderCms();
-  generateQr();
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 
-init();
+if (pageType() === "customer") initCustomer();
+if (pageType() === "admin") initAdmin();

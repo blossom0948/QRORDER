@@ -2,20 +2,20 @@
 
 스마트 QR 테이블 오더 MVP 웹사이트입니다.
 
-## 구성
+## 화면 구조
 
-- 손님용 QR 웹 메뉴판
-- 사장님용 실시간 주문 보드
-- 메뉴 가격 및 품절 관리
-- 테이블 QR 코드 생성 및 PNG 다운로드
+- `index.html`: 손님 전용 주문 화면
+- `admin.html`: 사장님 전용 주문/메뉴 관리 화면
 
-## 로컬 실행
+손님 화면에는 홍보용 히어로 이미지나 관리자 기능을 노출하지 않습니다. 메뉴, 장바구니, 주문 확인만 제공합니다.
 
-정적 사이트라 별도 빌드가 필요 없습니다. `index.html`을 브라우저에서 열거나 로컬 정적 서버로 실행하면 됩니다.
+## 기능
 
-```powershell
-node -e "require('http').createServer((req,res)=>require('fs').createReadStream(req.url==='/'?'index.html':'.'+decodeURIComponent(req.url)).pipe(res)).listen(4173)"
-```
+- 손님: 메뉴 조회, 장바구니, 주문 접수 확인
+- 사장님: 주문 대기/조리중/완료 상태 관리
+- 사장님: 메뉴 이미지 URL, 가격, 품절 여부 설정
+
+현재 정적 MVP라 주문과 메뉴 설정은 같은 브라우저의 `localStorage`에 저장됩니다. 실제 손님 기기와 사장님 기기 간 실시간 동기화는 Firebase Firestore 같은 DB를 붙이면 됩니다.
 
 ## 배포
 
