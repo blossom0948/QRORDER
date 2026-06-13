@@ -34,10 +34,11 @@
 - 사장님: 메뉴 이미지 URL/파일 업로드, 이름, 설명, 분류, 가격, 배지, 옵션 그룹, 품절 여부 설정
 - 사장님: 메뉴 노출 순서 변경
 - 사장님: 메뉴 추가 및 삭제
+- Firebase: 사장님 로그인, 매장 생성, 기본 메뉴 생성, 테이블 QR 생성, 실시간 주문 동기화
 
-현재 정적 MVP라 주문과 메뉴 설정은 같은 브라우저 origin의 `localStorage`에 저장되고, 지원 브라우저에서는 `BroadcastChannel`로 탭 간 실시간 동기화를 시연합니다. 실제 매장 배포에서는 Firebase Firestore 또는 Supabase Realtime 같은 DB, 서버 기반 QR 토큰 검증, PG 결제 승인 API를 붙이면 손님 기기와 사장님 기기 간 동기화가 안정적으로 동작합니다.
+URL에 `store`와 `token`이 있으면 Firebase Firestore 실매장 모드로 동작합니다. 없으면 기존 localStorage 데모 모드로 동작합니다.
 
-무료 기준 운영 연동 순서는 [FREE_SETUP_GUIDE.md](FREE_SETUP_GUIDE.md)에 정리했습니다.
+Firebase 무료 기준 운영 순서는 [FREE_SETUP_GUIDE.md](FREE_SETUP_GUIDE.md)에 정리했습니다. Firestore 보안 규칙은 [firestore.rules](firestore.rules)를 Firebase Console에 붙여 넣으면 됩니다.
 
 ## 배포
 
