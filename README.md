@@ -34,11 +34,11 @@
 - 사장님: 메뉴 이미지 URL/파일 업로드, 이름, 설명, 분류, 가격, 배지, 옵션 그룹, 품절 여부 설정
 - 사장님: 메뉴 노출 순서 변경
 - 사장님: 메뉴 추가 및 삭제
-- Firebase: 사장님 로그인, 매장 생성, 기본 메뉴 생성, 테이블 QR 생성, 실시간 주문 동기화
+- Firebase: Google 로그인 기반 사장님 온보딩, 매장 생성, 기본 메뉴 생성, 테이블 QR 생성, 실시간 주문 동기화
 
 URL에 `store`와 `token`이 있으면 Firebase Firestore 실매장 모드로 동작합니다. 없으면 기존 localStorage 데모 모드로 동작합니다.
 
-Firebase 무료 기준 운영 순서는 [FREE_SETUP_GUIDE.md](FREE_SETUP_GUIDE.md)에 정리했습니다. Firestore 보안 규칙은 [firestore.rules](firestore.rules)를 Firebase Console에 붙여 넣으면 됩니다.
+Firebase 무료 기준 운영 순서는 [FREE_SETUP_GUIDE.md](FREE_SETUP_GUIDE.md)에 정리했습니다. Firestore 보안 규칙은 [firestore.rules](firestore.rules)를 Firebase Console에 붙여 넣으면 됩니다. 사장님 계정이나 `admins/{UID}` 문서는 수동으로 만들지 않습니다.
 
 ## 배포
 
